@@ -85,7 +85,7 @@ public class ConvolutionReducer extends MapReduceBase implements
 		long ckPointSum = 0;
 		long ckConvolution = 0;
 
-		Long[] kernelStack = ConvertStringArrayToLongArray(kernelMap.get(96).split(","));
+		Long[] kernelStack = ConvertStringArrayToLongArray(kernelMap.get(100).split(","));
 		
 		int windowSize = kernelStack.length;
 

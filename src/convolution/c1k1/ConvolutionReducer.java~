@@ -130,7 +130,7 @@ public class ConvolutionReducer extends MapReduceBase implements
 				for (int i = 0; i < oWindow.size(); i++) {
 
 					ckPointSum += oWindow.get(i)*kernelStack[i];
-        			CalcString += "("+String.valueOf(oWindow.get(i))+")" + "*" + "("+String.valueOf(kernelStack[i])+") + ";
+//        			CalcString += "("+String.valueOf(oWindow.get(i))+")" + "*" + "("+String.valueOf(kernelStack[i])+") + ";
 
 				} // for
 
