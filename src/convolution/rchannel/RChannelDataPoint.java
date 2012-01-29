@@ -1,4 +1,4 @@
-package convolution.c1k1;
+package convolution.rchannel;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

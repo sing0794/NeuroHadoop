@@ -1,4 +1,4 @@
-package convolution.c1k1;
+package convolution.rchannel;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;

@@ -1,4 +1,4 @@
-package convolution.c1k1;
+package convolution.rchannel;
 
 import java.io.IOException;
 import java.io.BufferedReader;

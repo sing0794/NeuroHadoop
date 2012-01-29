@@ -1,4 +1,4 @@
-package convolution.c1k1;
+package convolution.rchannel;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Partitioner;

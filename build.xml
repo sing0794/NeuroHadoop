@@ -12,7 +12,7 @@
 	<property name="jar.dir" value="${build.dir}"/>
 	<property name="build.lib.dir" value="${build.dir}/lib"/>
 
-	<property name="main-class" value="convolution.c1k1.ConvolutionJob"/>
+	<property name="main-class" value="convolution.rchannel.ConvolutionJob"/>
 	<property name="tmp.dir" value="tmp"/>
 	
 
