@@ -80,9 +80,6 @@ public class ConvolutionReducer extends MapReduceBase implements
 			OutputCollector<Text, Text> output, Reporter reporter)
 			throws IOException {
 
-		TimeseriesDataPoint next_point;
-
-		long ckPointSum = 0;
 		long ckConvolution = 0;
 
 		Long[] kernelStack = ConvertStringArrayToLongArray(kernelMap.get(100).split(","));
@@ -90,26 +87,19 @@ public class ConvolutionReducer extends MapReduceBase implements
 		int windowSize = kernelStack.length;
 
 		Text out_key = new Text();
+		out_key.set("");
 		Text out_val = new Text();
 
 		CircularArrayList<Long> sliding_window = new CircularArrayList<Long>(windowSize);	
 		
-		String CalcString = "";	
-
-		TimeseriesDataPoint p_copy = new TimeseriesDataPoint();
-
 		while (values.hasNext()) {
 
 			while (sliding_window.size() < sliding_window.capacity() && values.hasNext()) {
 
-				reporter.incrCounter(PointCounters.POINTS_ADDED_TO_WINDOWS, 1);
-
-				next_point = values.next();
-
-				p_copy.copy(next_point);
+				// reporter.incrCounter(PointCounters.POINTS_ADDED_TO_WINDOWS, 1);
 
 				try {
-					sliding_window.add(sliding_window.size(), p_copy.fValue);
+					sliding_window.add(sliding_window.size(), values.next().fValue);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -118,12 +108,9 @@ public class ConvolutionReducer extends MapReduceBase implements
 
 			if (sliding_window.size() == sliding_window.capacity()) {
 
-				reporter.incrCounter(PointCounters.MOVING_AVERAGES_CALCD, 1);
-
-				out_key.set("");
+				// reporter.incrCounter(PointCounters.MOVING_AVERAGES_CALCD, 1);
 
 				ckConvolution = 0;
-				CalcString = "";
 
 				for (int i = 0; i < sliding_window.size(); i++) {
 

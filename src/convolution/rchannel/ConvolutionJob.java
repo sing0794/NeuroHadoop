@@ -30,8 +30,8 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class ConvolutionJob extends Configured implements Tool {
 
-    public static final String LOCAL_KERNEL = "/home/jadin/morlet-2000.csv";
-    public static final String LOCAL_CHANNEL = "/home/jadin/R187-2009-11-08-CSC6a.csv";
+    public static final String LOCAL_KERNEL = "/home/ashish/morlet-2000.csv";
+    public static final String LOCAL_CHANNEL = "/home/ashish/R187-2009-11-08-CSC6a.csv";
 
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
     public static final String HDFS_CHANNEL = "input/R187-2009-11-08-CSC6a.dat";
