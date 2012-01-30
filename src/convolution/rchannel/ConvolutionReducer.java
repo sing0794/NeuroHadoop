@@ -92,49 +92,44 @@ public class ConvolutionReducer extends MapReduceBase implements
 		Text out_key = new Text();
 		Text out_val = new Text();
 
-		SlidingWindow sliding_window = new SlidingWindow(windowSize);	
+		CircularArrayList<Long> sliding_window = new CircularArrayList<Long>(windowSize);	
 		
 		String CalcString = "";	
 
+		TimeseriesDataPoint p_copy = new TimeseriesDataPoint();
+
 		while (values.hasNext()) {
 
-			while (sliding_window.WindowIsFull() == false && values.hasNext()) {
+			while (sliding_window.size() < sliding_window.capacity() && values.hasNext()) {
 
 				reporter.incrCounter(PointCounters.POINTS_ADDED_TO_WINDOWS, 1);
 
 				next_point = values.next();
 
-				TimeseriesDataPoint p_copy = new TimeseriesDataPoint();
 				p_copy.copy(next_point);
 
 				try {
-					sliding_window.AddPoint(p_copy.fValue);
+					sliding_window.add(sliding_window.size(), p_copy.fValue);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 
 			}
 
-			if (sliding_window.WindowIsFull()) {
+			if (sliding_window.size() == sliding_window.capacity()) {
 
 				reporter.incrCounter(PointCounters.MOVING_AVERAGES_CALCD, 1);
 
-				LinkedList<Long> oWindow = sliding_window.GetCurrentWindow();
-
-
 				out_key.set("");
 
-				ckPointSum = 0;
+				ckConvolution = 0;
 				CalcString = "";
 
-				for (int i = 0; i < oWindow.size(); i++) {
+				for (int i = 0; i < sliding_window.size(); i++) {
 
-					ckPointSum += oWindow.get(i)*kernelStack[i];
-//        			CalcString += "("+String.valueOf(oWindow.get(i))+")" + "*" + "("+String.valueOf(kernelStack[i])+") + ";
+					ckConvolution += sliding_window.get(i)*kernelStack[i];
 
 				} // for
-
-				ckConvolution = ckPointSum;
 
 				out_val.set(String.valueOf(ckConvolution));
 
@@ -142,7 +137,7 @@ public class ConvolutionReducer extends MapReduceBase implements
 
 				// 2. step window forward
 
-				sliding_window.SlideWindowForward();
+				sliding_window.remove(0);
 
 			}
 
