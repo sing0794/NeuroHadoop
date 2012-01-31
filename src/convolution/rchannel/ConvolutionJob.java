@@ -30,8 +30,8 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class ConvolutionJob extends Configured implements Tool {
 
-    public static final String LOCAL_KERNEL = "/home/ashish/morlet-2000.csv";
-    public static final String LOCAL_CHANNEL = "/home/ashish/R187-2009-11-08-CSC6a.csv";
+    public static final String LOCAL_KERNEL = "/home/sing0794/data/morlet-2000.csv";
+    public static final String LOCAL_CHANNEL = "/home/sing0794/data/R187-2009-11-08-CSC6a.csv";
 
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
     public static final String HDFS_CHANNEL = "input/R187-2009-11-08-CSC6a.dat";
@@ -75,7 +75,9 @@ public class ConvolutionJob extends Configured implements Tool {
 		conf.setPartitionerClass(NaturalKeyPartitioner.class);
 		conf.setOutputKeyComparatorClass(CompositeKeyComparator.class);
 		conf.setOutputValueGroupingComparator(NaturalKeyGroupingComparator.class);
-
+		conf.setProfileEnabled(true);
+		conf.setProfileParams("-agentlib:hprof=cpu=samples,heap=sites,depth=6,force=n,thread=y,verbose=n,file=%s");
+		conf.setProfileTaskRange(false,"0");
 
         List<String> other_args = new ArrayList<String>();
         for(int i=0; i < args.length; ++i) {

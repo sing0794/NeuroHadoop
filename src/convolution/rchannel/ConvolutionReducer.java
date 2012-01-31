@@ -90,7 +90,7 @@ public class ConvolutionReducer extends MapReduceBase implements
 		out_key.set("");
 		Text out_val = new Text();
 
-		CircularArrayList<Long> sliding_window = new CircularArrayList<Long>(windowSize);	
+		CircularArrayList sliding_window = new CircularArrayList(windowSize);	
 		
 		while (values.hasNext()) {
 
