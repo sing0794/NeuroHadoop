@@ -25,13 +25,20 @@ public class CircularArrayList {
     }
  
     private int wrapIndex(int i) {
-        int m = i % n;
-        if (m < 0) { // java modulus can be negative
-            m += n;
+        if (i>=n) { // java modulus can be negative
+            return i-n;
+        }
+        return i;
+    }
+ 
+ /*   private int wrapIndex(int i) {
+        int m = i;
+        if (m >= n) {
+            m = m-n;
         }
         return m;
     }
- 
+ */
     // This method is O(n) but will never be called if the
     // CircularArrayList is used in its typical/intended role.
     private void shiftBlock(int startIndex, int endIndex) {
