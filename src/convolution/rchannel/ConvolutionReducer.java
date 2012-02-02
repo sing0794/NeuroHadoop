@@ -26,7 +26,7 @@ public class ConvolutionReducer extends MapReduceBase implements
 		POINTS_SEEN, POINTS_ADDED_TO_WINDOWS, MOVING_AVERAGES_CALCD
 	};
 
-    private HashMap<Integer, String> kernelMap;
+    	private HashMap<Integer, String> kernelMap;
 
 	private JobConf configuration;
 
@@ -66,76 +66,50 @@ public class ConvolutionReducer extends MapReduceBase implements
         }
     }
 
-    public Long[] ConvertStringArrayToLongArray(String[] stringArray){
-        Long longArray[] = new Long[stringArray.length];
+    public int[] ConvertStringArrayToIntegerArray(String[] stringArray){
+        int intArray[] = new int[stringArray.length];
 
         for(int i = 0; i < stringArray.length; i++){
-            longArray[i] = Long.parseLong(stringArray[i]);
+            intArray[i] = Integer.parseInt(stringArray[i]);
         }
 
-        return longArray;
+        return intArray;
     }
 
 	public void reduce(TimeseriesKey key, Iterator<TimeseriesDataPoint> values,
-			OutputCollector<Text, Text> output, Reporter reporter)
-			throws IOException {
+		   OutputCollector<Text, Text> output, Reporter reporter)
+		   throws IOException {
 
-		long ckConvolution = 0;
+	       long ckConvolution = 0;
 
-		Long[] kernelStack = ConvertStringArrayToLongArray(kernelMap.get(100).split(","));
-		
-		int windowSize = kernelStack.length;
+	       int[] kernelStack = ConvertStringArrayToIntegerArray(kernelMap.get(100).split(","));
 
-		Text out_key = new Text();
-		out_key.set("");
-		Text out_val = new Text();
+	       int windowSize = kernelStack.length;
 
-		CircularArrayList sliding_window = new CircularArrayList(windowSize);	
-		
-		while (values.hasNext()) {
+	       Text out_key = new Text();
+	       out_key.set("");
+	       Text out_val = new Text();
 
-			while (sliding_window.size() < sliding_window.capacity() && values.hasNext()) {
+	       int[] signal = new int[12000000];
+	       int n = 0;
 
-				// reporter.incrCounter(PointCounters.POINTS_ADDED_TO_WINDOWS, 1);
+	       while (values.hasNext()) {
+		       signal[n] = values.next().fValue;
+		   n++;
+	       }
 
-				try {
-					sliding_window.add(sliding_window.size(), values.next().fValue);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+	       for (int j = 0; j<n-windowSize; j++) {
 
-			}
+		       ckConvolution = 0;
 
-			if (sliding_window.size() == sliding_window.capacity()) {
+		       for (int i = 0; i <windowSize; i++) {
+		       ckConvolution += signal[j+i]*kernelStack[i];
 
-				// reporter.incrCounter(PointCounters.MOVING_AVERAGES_CALCD, 1);
+		   } // for
 
-				ckConvolution = 0;
+		   out_val.set(String.valueOf(ckConvolution));
+		   output.collect(out_key, out_val);
+	       }
 
-				for (int i = 0; i < sliding_window.size(); i++) {
-
-					ckConvolution += sliding_window.get(i)*kernelStack[i];
-
-				} // for
-
-				out_val.set(String.valueOf(ckConvolution));
-
-				output.collect(out_key, out_val);
-
-				// 2. step window forward
-
-				sliding_window.remove(0);
-
-			}
-
-		} // while
-
-		out_key.set("debug > " + key.getGroup()
-				+ " --------- end of group -------------");
-		out_val.set("");
-
-		output.collect(out_key, out_val);
-
-	} // reduce
-
+	   } // reduce
 }

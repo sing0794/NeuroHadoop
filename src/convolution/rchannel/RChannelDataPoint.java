@@ -18,8 +18,8 @@ public class RChannelDataPoint {
 	public String timestamp;
 	public String voltage = String.valueOf(0);
 
-	public long getVoltage() {
-		return Long.parseLong(this.voltage);
+	public short getVoltage() {
+		return Short.parseShort(this.voltage);
 
 	}
 

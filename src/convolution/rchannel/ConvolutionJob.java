@@ -30,8 +30,8 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class ConvolutionJob extends Configured implements Tool {
 
-    public static final String LOCAL_KERNEL = "/home/sing0794/data/morlet-2000.csv";
-    public static final String LOCAL_CHANNEL = "/home/sing0794/data/R187-2009-11-08-CSC6a.csv";
+    public static final String LOCAL_KERNEL = "/home/ashish/morlet-2000.csv";
+    public static final String LOCAL_CHANNEL = "/home/ashish/R187-2009-11-08-CSC6a.csv";
 
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
     public static final String HDFS_CHANNEL = "input/R187-2009-11-08-CSC6a.dat";
@@ -64,7 +64,7 @@ public class ConvolutionJob extends Configured implements Tool {
 		JobConf conf = new JobConf(getConf(), ConvolutionJob.class);
 		conf.setJobName("ConvolutionJob");
 
-        this.hdfsSetup(conf);
+        	this.hdfsSetup(conf);
 
 		conf.setMapOutputKeyClass(TimeseriesKey.class);
 		conf.setMapOutputValueClass(TimeseriesDataPoint.class);
@@ -75,9 +75,7 @@ public class ConvolutionJob extends Configured implements Tool {
 		conf.setPartitionerClass(NaturalKeyPartitioner.class);
 		conf.setOutputKeyComparatorClass(CompositeKeyComparator.class);
 		conf.setOutputValueGroupingComparator(NaturalKeyGroupingComparator.class);
-		conf.setProfileEnabled(true);
-		conf.setProfileParams("-agentlib:hprof=cpu=samples,heap=sites,depth=6,force=n,thread=y,verbose=n,file=%s");
-		conf.setProfileTaskRange(false,"0");
+
 
         List<String> other_args = new ArrayList<String>();
         for(int i=0; i < args.length; ++i) {
@@ -89,8 +87,6 @@ public class ConvolutionJob extends Configured implements Tool {
            } else if ("-r".equals(args[i])) {
            	
              conf.setNumReduceTasks(Integer.parseInt(args[++i]));
-	           
-	           
 	           		    	   
            } else {
            	
@@ -128,16 +124,14 @@ public class ConvolutionJob extends Configured implements Tool {
 	}
 
 	static int printUsage() {
-		System.out
-				.println("ConvolutionJob [-m <maps>] [-r <reduces>] <input> <output>");
+		System.out.println("ConvolutionJob [-m <maps>] [-r <reduces>] <input> <output>");
 		ToolRunner.printGenericCommandUsage(System.out);
 		return -1;
 	}
 
 	public static void main(String[] args) throws Exception {
 
-		int res = ToolRunner.run(new Configuration(), new ConvolutionJob(),
-				args);
+		int res = ToolRunner.run(new Configuration(), new ConvolutionJob(), args);
 		System.exit(res);
 
 	}

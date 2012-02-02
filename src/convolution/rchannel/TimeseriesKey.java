@@ -15,12 +15,6 @@ import org.apache.hadoop.io.WritableComparator;
  * 
  * This particular key has two parts, the String Group and long Timestamp.
  * 
- * We do a primary grouping pass on the Group field to get all of the data of
- * one type together, and then our "secondary sort" during the shuffle phase
- * uses the Timestamp long member to sort the timeseries points so that they
- * arrive at the reducer partitioned and in sorted order.
- * 
- * @author jpatterson
  * 
  */
 public class TimeseriesKey implements WritableComparable<TimeseriesKey> {
