@@ -10,7 +10,7 @@ public class TimeseriesDataPoint implements Writable,
 		Comparable<TimeseriesDataPoint> {
 
 	public long lDateTime;
-	public int fValue;
+	public short fValue;
 
 	/**
 	 * Deserializes the point from the underlying data.
@@ -24,7 +24,7 @@ public class TimeseriesDataPoint implements Writable,
 	public void readFields(DataInput in) throws IOException {
 
 		this.lDateTime = in.readLong();
-		this.fValue = in.readInt();
+		this.fValue = in.readShort();
 	}
 
 	/**
@@ -56,7 +56,7 @@ public class TimeseriesDataPoint implements Writable,
 	public void write(DataOutput out) throws IOException {
 
 		out.writeLong(this.lDateTime);
-		out.writeInt(this.fValue);
+		out.writeShort(this.fValue);
 
 	}
 

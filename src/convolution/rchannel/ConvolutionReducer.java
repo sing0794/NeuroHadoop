@@ -21,12 +21,13 @@ public class ConvolutionReducer extends MapReduceBase implements
 		Reducer<TimeseriesKey, TimeseriesDataPoint, Text, Text> {
 
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
+    public static final int SIGNAL_BUFFER_SIZE = 10000000;
 
 	static enum PointCounters {
 		POINTS_SEEN, POINTS_ADDED_TO_WINDOWS, MOVING_AVERAGES_CALCD
 	};
 
-    	private HashMap<Integer, String> kernelMap;
+    private HashMap<Integer, String> kernelMap;
 
 	private JobConf configuration;
 
@@ -66,14 +67,14 @@ public class ConvolutionReducer extends MapReduceBase implements
         }
     }
 
-    public int[] ConvertStringArrayToIntegerArray(String[] stringArray){
-        int intArray[] = new int[stringArray.length];
+    public short[] ConvertStringArrayToShortArray(String[] stringArray){
+        short shortArray[] = new short[stringArray.length];
 
         for(int i = 0; i < stringArray.length; i++){
-            intArray[i] = Integer.parseInt(stringArray[i]);
+            shortArray[i] = Short.parseShort(stringArray[i]);
         }
 
-        return intArray;
+        return shortArray;
     }
 
 	public void reduce(TimeseriesKey key, Iterator<TimeseriesDataPoint> values,
@@ -82,7 +83,7 @@ public class ConvolutionReducer extends MapReduceBase implements
 
 	       long ckConvolution = 0;
 
-	       int[] kernelStack = ConvertStringArrayToIntegerArray(kernelMap.get(100).split(","));
+	       short[] kernelStack = ConvertStringArrayToShortArray(kernelMap.get(100).split(","));
 
 	       int windowSize = kernelStack.length;
 
@@ -90,26 +91,40 @@ public class ConvolutionReducer extends MapReduceBase implements
 	       out_key.set("");
 	       Text out_val = new Text();
 
-	       int[] signal = new int[12000000];
-	       int n = 0;
-
+	       short[] signal = new short[SIGNAL_BUFFER_SIZE];
+	       
+	       short reusecount = 0;
+	       
 	       while (values.hasNext()) {
-		       signal[n] = values.next().fValue;
-		   n++;
-	       }
 
-	       for (int j = 0; j<n-windowSize; j++) {
+               int n = 0;
+               if (reusecount>0) {
+                   for (int j = SIGNAL_BUFFER_SIZE-windowSize+1; j<SIGNAL_BUFFER_SIZE; j++) {
+                       signal[n] = signal[j];
+                       n++;
+                   }
+               }
 
-		       ckConvolution = 0;
+	           while (values.hasNext() && n<SIGNAL_BUFFER_SIZE) {
+		           signal[n] = values.next().fValue;
+		           n++;
+	           }
 
-		       for (int i = 0; i <windowSize; i++) {
-		       ckConvolution += signal[j+i]*kernelStack[i];
+	           for (int j = 0; j<=n-windowSize; j++) {
 
-		   } // for
+		           ckConvolution = 0;
 
-		   out_val.set(String.valueOf(ckConvolution));
-		   output.collect(out_key, out_val);
-	       }
+		           for (int i = 0; i <windowSize; i++) {
+        		       ckConvolution += signal[j+i]*kernelStack[i];
+        		   } // for
+
+		       out_val.set(String.valueOf(ckConvolution));
+		       output.collect(out_key, out_val);
+	           }
+	           
+	           reusecount++;
+            }	       
+	       
 
 	   } // reduce
 }
