@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -13,7 +14,6 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -31,10 +31,10 @@ import org.apache.hadoop.util.ToolRunner;
 public class ConvolutionJob extends Configured implements Tool {
 
     public static final String LOCAL_KERNEL = "/home/ashish/data/morlet-2000.csv";
-    public static final String LOCAL_CHANNEL = "/home/ashish/data/R187-2009-11-08-CSC6a.csv";
+    public static final String LOCAL_CHANNEL = "/home/ashish/data/R048-2004-07-15-CSC11d.csv";
 
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
-    public static final String HDFS_CHANNEL = "input/R187-2009-11-08-CSC6a.dat";
+    public static final String HDFS_CHANNEL = "input/R048-2004-07-15-CSC11d.dat";
 
     public void cacheKernel(JobConf conf) throws IOException {
         FileSystem fs = FileSystem.get(conf);
@@ -64,18 +64,9 @@ public class ConvolutionJob extends Configured implements Tool {
 		JobConf conf = new JobConf(getConf(), ConvolutionJob.class);
 		conf.setJobName("ConvolutionJob");
 
-        	this.hdfsSetup(conf);
-
-		conf.setMapOutputKeyClass(TimeseriesKey.class);
-		conf.setMapOutputValueClass(TimeseriesDataPoint.class);
+        this.hdfsSetup(conf);
 
 		conf.setMapperClass(ConvolutionMapper.class);
-		conf.setReducerClass(ConvolutionReducer.class);
-
-		conf.setPartitionerClass(NaturalKeyPartitioner.class);
-		conf.setOutputKeyComparatorClass(CompositeKeyComparator.class);
-		conf.setOutputValueGroupingComparator(NaturalKeyGroupingComparator.class);
-
 
         List<String> other_args = new ArrayList<String>();
         for(int i=0; i < args.length; ++i) {
@@ -109,9 +100,9 @@ public class ConvolutionJob extends Configured implements Tool {
          return printUsage();
         }
 	
-		
-		conf.setInputFormat(TextInputFormat.class);
-
+		conf.setNumReduceTasks(0);
+		conf.setInputFormat(NonSplittableTextInputFormat.class);
+		//conf.setLong("mapred.min.split.size", Long.MAX_VALUE);
 		conf.setOutputFormat(TextOutputFormat.class);
 		conf.setCompressMapOutput(true);
 
