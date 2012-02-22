@@ -41,7 +41,6 @@ public class ConvolutionMapper extends MapReduceBase implements
 	};
 
 	private JobConf configuration;
-//	private final TimeseriesKey key = new TimeseriesKey();
 	private final Text out_key = new Text();
 
 	private final TimeseriesDataPoint val = new TimeseriesDataPoint();
@@ -76,8 +75,6 @@ public class ConvolutionMapper extends MapReduceBase implements
                 }
                 kernelStack = ConvertStringArrayToShortArray(kernelMap.get(100).split(","));
                 windowSize = kernelStack.length;
-
-
             }
         } catch (IOException ioe) {
             System.err.println("IOException reading from distributed cache");
@@ -123,31 +120,30 @@ public class ConvolutionMapper extends MapReduceBase implements
             
             lastTimestamp = rec.getTimestamp();
             
-            if (n<SIGNAL_BUFFER_SIZE) {
-                signal[n] = rec.getVoltage();
-
-                if (n>=windowSize-1) {
-
-                   ckConvolution = 0;
-
-                   for (int i = n-windowSize+1, j=0; i <= n && j < windowSize; i++, j++) {
-                       ckConvolution += signal[i]*kernelStack[j];
-                   } // for
-
-                out_key.set(String.valueOf(ckConvolution));
-                output.collect(out_key, null);
-                } // if
-
-                n++;
-
-            } else {
+            if ( n == SIGNAL_BUFFER_SIZE ) {
                 n = 0;
                 for (int j = SIGNAL_BUFFER_SIZE-windowSize+1; j<SIGNAL_BUFFER_SIZE; j++) {
-                   signal[n] = signal[j];
+                   signal[n] = signal[j];            
                    n++;
                 } //for
             } // if
-            
+        
+            signal[n] = rec.getVoltage();
+
+            if (n>=windowSize-1) {
+
+               ckConvolution = 0;
+
+               for (int i = n-windowSize+1, j=0; i <= n && j < windowSize; i++, j++) {
+                   ckConvolution += signal[i]*kernelStack[j];
+               } // for
+
+            out_key.set(String.valueOf(ckConvolution));
+            output.collect(out_key, null);
+            } // if
+
+            n++;
+
         } catch (IOException ioe) {
             System.err.println(ioe.getMessage());
             System.exit(0);
