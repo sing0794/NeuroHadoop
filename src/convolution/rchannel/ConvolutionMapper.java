@@ -135,6 +135,10 @@ public class ConvolutionMapper extends MapReduceBase implements
 
         try {
             
+            if (lastTimestamp > rec.getTimestamp()) {
+                throw new IOException("Timestamp not sorted at: " + lastTimestamp + " and " + rec.getTimestamp());
+            }
+            
             lastTimestamp = rec.getTimestamp();
             
             if ( n == SIGNAL_BUFFER_SIZE ) {
