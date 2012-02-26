@@ -3,6 +3,7 @@ package convolution.rchannel;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.File;
 import java.util.HashMap;
 
 import org.apache.hadoop.conf.Configuration;
@@ -20,13 +21,6 @@ import org.apache.log4j.Logger;
 /**
  * ConvolutionMapper
  * 
- * The primary purpose of this map class is to read each line from the CSV file
- * split, parse out the timeseries point record with the YahooStockDataPoint
- * class, and emit a timeseries k/v pair
- * 
- * In this case we're emitting custom key and value pairs for this example in
- * the TimeseriesKey ( key / WriteableComparable ) and TimeseriesDataPoint (
- * value / Writeable )
  * 
  */
 
@@ -35,20 +29,27 @@ public class ConvolutionMapper extends MapReduceBase implements
 
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
     public static final int SIGNAL_BUFFER_SIZE = 10000000;
+    public static final int KERNEL_START_FREQ = 5;
+    public static final int KERNEL_END_FREQ = 200;
+    public static final int KERNEL_WINDOW_SIZE = 2001;
 
 	static enum Parse_Counters {
 		BAD_PARSE
 	};
 
 	private JobConf configuration;
+
+    private String ratnumber;
+    private String sessiondate;
+    private String channelid;
+
 	private final Text out_key = new Text();
 
 	private final TimeseriesDataPoint val = new TimeseriesDataPoint();
     private HashMap<Integer, String> kernelMap;
-    private short[] kernelStack;
-    private int windowSize;
+    private short[][] kernelStack = new short[KERNEL_END_FREQ+1][KERNEL_WINDOW_SIZE];
     
-    private long ckConvolution = 0;
+    private long[] ckConvolution = new long[KERNEL_END_FREQ+1];
     private short[] signal = new short[SIGNAL_BUFFER_SIZE];
     private int n = 0;
 
@@ -62,7 +63,25 @@ public class ConvolutionMapper extends MapReduceBase implements
     @Override
 	public void configure(JobConf conf) {
 		this.configuration = conf;
-
+        String fpath = conf.get("map.input.file");
+        String fname = new File(fpath).getName();
+        
+        int indexBegin = 0;
+        int indexEnd = fname.indexOf('-');
+        ratnumber = fname.substring(indexBegin, indexEnd);
+        indexBegin = indexEnd+1;
+        indexEnd = fname.indexOf('-', indexBegin);
+        sessiondate = fname.substring(indexBegin, indexEnd);
+        indexBegin = indexEnd+1;
+        indexEnd = fname.indexOf('-', indexBegin);
+        sessiondate = sessiondate + '-' + fname.substring(indexBegin, indexEnd);
+        indexBegin = indexEnd+1;
+        indexEnd = fname.indexOf('-', indexBegin);
+        sessiondate = sessiondate + '-' + fname.substring(indexBegin, indexEnd);
+        indexBegin = indexEnd+4;
+        indexEnd = fname.indexOf('.', indexBegin);
+        channelid = fname.substring(indexBegin, indexEnd);
+        
         try {
             String kernelCacheName = new Path(HDFS_KERNEL).getName();
             Path [] cacheFiles = DistributedCache.getLocalCacheFiles(conf);
@@ -73,8 +92,9 @@ public class ConvolutionMapper extends MapReduceBase implements
                         break;
                     }
                 }
-                kernelStack = ConvertStringArrayToShortArray(kernelMap.get(100).split(","));
-                windowSize = kernelStack.length;
+                for (int i=KERNEL_START_FREQ; i <=   KERNEL_END_FREQ; i++) {
+                    kernelStack[i] = ConvertStringArrayToShortArray(kernelMap.get(i).split(","));
+                }
             }
         } catch (IOException ioe) {
             System.err.println("IOException reading from distributed cache");
@@ -86,7 +106,7 @@ public class ConvolutionMapper extends MapReduceBase implements
         BufferedReader kernelReader = new BufferedReader(new FileReader(cachePath.toString()));
         try {
             String line = "";
-            int kernelFreq = 5;
+            int kernelFreq = KERNEL_START_FREQ;
             this.kernelMap = new HashMap<Integer, String>();
             while ((line = kernelReader.readLine()) != null) {
                 this.kernelMap.put(kernelFreq, line);
@@ -114,15 +134,12 @@ public class ConvolutionMapper extends MapReduceBase implements
         rec = RChannelDataPoint.parse(value.toString());
 
         try {
-            if (lastTimestamp > rec.getTimestamp()) {
-                throw new IOException("Timestamp not sorted at: " + lastTimestamp + " and " + rec.getTimestamp());
-            }
             
             lastTimestamp = rec.getTimestamp();
             
             if ( n == SIGNAL_BUFFER_SIZE ) {
                 n = 0;
-                for (int j = SIGNAL_BUFFER_SIZE-windowSize+1; j<SIGNAL_BUFFER_SIZE; j++) {
+                for (int j = SIGNAL_BUFFER_SIZE-KERNEL_WINDOW_SIZE+1; j<SIGNAL_BUFFER_SIZE; j++) {
                    signal[n] = signal[j];            
                    n++;
                 } //for
@@ -130,16 +147,24 @@ public class ConvolutionMapper extends MapReduceBase implements
         
             signal[n] = rec.getVoltage();
 
-            if (n>=windowSize-1) {
+            if (n>=KERNEL_WINDOW_SIZE-1) {
 
-               ckConvolution = 0;
+                for (int k = KERNEL_START_FREQ; k <= KERNEL_END_FREQ; k++) {
+                    ckConvolution[k] = 0;
+                    
+                    for (int i = n-KERNEL_WINDOW_SIZE+1, j=0; i <= n && j < KERNEL_WINDOW_SIZE; i++, j++) {
+                        ckConvolution[k] += signal[i]*kernelStack[k][j];
+                    } // for
 
-               for (int i = n-windowSize+1, j=0; i <= n && j < windowSize; i++, j++) {
-                   ckConvolution += signal[i]*kernelStack[j];
-               } // for
-
-            out_key.set(String.valueOf(ckConvolution));
-            output.collect(out_key, null);
+                    out_key.set(lastTimestamp + "," +
+                                ratnumber + "," +
+                                sessiondate + "," +
+                                channelid + "," +
+                                k + "," +
+                                ckConvolution[k]);
+                    output.collect(out_key, null);
+                    
+                } //for
             } // if
 
             n++;

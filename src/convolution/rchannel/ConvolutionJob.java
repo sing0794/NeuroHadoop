@@ -29,31 +29,13 @@ import org.apache.hadoop.util.ToolRunner;
  */
 
 public class ConvolutionJob extends Configured implements Tool {
-
-    public static final String LOCAL_KERNEL = "/home/ashish/data/morlet-2000.csv";
-    public static final String LOCAL_CHANNEL = "/home/ashish/data/R048-2004-07-15-CSC11d.csv";
-
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
-    public static final String HDFS_CHANNEL = "input/R048-2004-07-15-CSC11d.dat";
 
     public void cacheKernel(JobConf conf) throws IOException {
         FileSystem fs = FileSystem.get(conf);
         Path hdfsPath = new Path(HDFS_KERNEL);
 
-        // upload kernel file to hdfs. Overwrite any existing copy.
-        fs.copyFromLocalFile(false, true, new Path(LOCAL_KERNEL), hdfsPath);
-
         DistributedCache.addCacheFile(hdfsPath.toUri(), conf);
-    }
-
-    public void hdfsSetup(JobConf conf) throws IOException {
-        FileSystem fs = FileSystem.get(conf);
-        Path hdfsPath = new Path(HDFS_CHANNEL);
-
-        // upload input channel file to hdfs. Overwrite any existing copy.
-        fs.copyFromLocalFile(false, true, new Path(LOCAL_CHANNEL), hdfsPath);
-
-        this.cacheKernel(conf);
     }
 
 	@Override
@@ -63,8 +45,8 @@ public class ConvolutionJob extends Configured implements Tool {
 
 		JobConf conf = new JobConf(getConf(), ConvolutionJob.class);
 		conf.setJobName("ConvolutionJob");
-
-        this.hdfsSetup(conf);
+		
+        this.cacheKernel(conf);
 
 		conf.setMapperClass(ConvolutionMapper.class);
 
@@ -102,7 +84,6 @@ public class ConvolutionJob extends Configured implements Tool {
 	
 		conf.setNumReduceTasks(0);
 		conf.setInputFormat(NonSplittableTextInputFormat.class);
-		//conf.setLong("mapred.min.split.size", Long.MAX_VALUE);
 		conf.setOutputFormat(TextOutputFormat.class);
 		conf.setCompressMapOutput(true);
 
