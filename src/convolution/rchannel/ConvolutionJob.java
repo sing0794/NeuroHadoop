@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -15,6 +16,7 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.TextOutputFormat;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -84,11 +86,16 @@ public class ConvolutionJob extends Configured implements Tool {
 	
 		conf.setNumReduceTasks(0);
 		conf.setInputFormat(NonSplittableTextInputFormat.class);
-		conf.setOutputFormat(TextOutputFormat.class);
+		conf.setOutputFormat(SequenceFileOutputFormat.class);
+		conf.setOutputKeyClass(NullWritable.class);
+		conf.setOutputValueClass(Text.class);
 		conf.setCompressMapOutput(true);
+    	conf.set("mapred.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
+		conf.set("mapred.output.compression.type", "BLOCK");
 
 		FileInputFormat.setInputPaths(conf, other_args.get(0));
 		FileOutputFormat.setOutputPath(conf, new Path(other_args.get(1)));
+		FileOutputFormat.setCompressOutput(conf, true);
 
 		JobClient.runJob(conf);
 
