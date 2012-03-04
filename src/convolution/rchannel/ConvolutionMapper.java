@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -25,7 +26,7 @@ import org.apache.log4j.Logger;
  */
 
 public class ConvolutionMapper extends MapReduceBase implements
-		Mapper<LongWritable, Text, Text, Text> {
+		Mapper<LongWritable, Text, NullWritable, Text> {
 
     public static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
     public static final int SIGNAL_BUFFER_SIZE = 10000000;
@@ -43,7 +44,7 @@ public class ConvolutionMapper extends MapReduceBase implements
     private String sessiondate;
     private String channelid;
 
-	private final Text out_key = new Text();
+	private final Text out_value = new Text();
 
 	private final TimeseriesDataPoint val = new TimeseriesDataPoint();
     private HashMap<Integer, String> kernelMap;
@@ -128,12 +129,16 @@ public class ConvolutionMapper extends MapReduceBase implements
     }
     
 	public void map(LongWritable inkey, Text value,
-        OutputCollector<Text, Text> output,
+        OutputCollector<NullWritable, Text> output,
         Reporter reporter) throws IOException {
 
         rec = RChannelDataPoint.parse(value.toString());
 
         try {
+            
+            if (lastTimestamp > rec.getTimestamp()) {
+                throw new IOException("Timestamp not sorted at: " + lastTimestamp + " and " + rec.getTimestamp());
+            }
             
             lastTimestamp = rec.getTimestamp();
             
@@ -156,13 +161,13 @@ public class ConvolutionMapper extends MapReduceBase implements
                         ckConvolution[k] += signal[i]*kernelStack[k][j];
                     } // for
 
-                    out_key.set(lastTimestamp + "," +
-                                ratnumber + "," +
+                    out_value.set(ratnumber + "," + 
                                 sessiondate + "," +
-                                channelid + "," +
-                                k + "," +
-                                ckConvolution[k]);
-                    output.collect(out_key, null);
+					    		lastTimestamp + "," +
+								channelid + "," +
+								k + "," +
+								ckConvolution[k]);
+                    output.collect(NullWritable.get(), out_value);
                     
                 } //for
             } // if
