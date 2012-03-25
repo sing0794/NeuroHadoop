@@ -10,7 +10,6 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -33,8 +32,7 @@ import org.apache.hadoop.util.ToolRunner;
 public class ConvolutionJob extends Configured implements Tool {
 	static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
 
-	static void cacheKernel(JobConf conf) throws IOException {
-		FileSystem fs = FileSystem.get(conf);
+	void cacheKernel(JobConf conf) throws IOException {
 		Path hdfsPath = new Path(HDFS_KERNEL);
 		DistributedCache.addCacheFile(hdfsPath.toUri(), conf);
 	}

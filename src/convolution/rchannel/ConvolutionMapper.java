@@ -5,7 +5,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashMap;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -16,7 +15,6 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.log4j.Logger;
 
 /**
  * ConvolutionMapper
@@ -36,11 +34,8 @@ public class ConvolutionMapper extends MapReduceBase implements
 		BAD_PARSE
 	};
 
-	private JobConf configuration;
-
 	private final Text out_value = new Text();
 
-	private final TimeseriesDataPoint val = new TimeseriesDataPoint();
 	private HashMap<Integer, String> kernelMap;
 	private short[][] kernelStack = new short[KERNEL_END_FREQ+1][KERNEL_WINDOW_SIZE];
 	
@@ -52,12 +47,8 @@ public class ConvolutionMapper extends MapReduceBase implements
 	
 	private long lastTimestamp = 0;
 
-	private static final Logger logger = Logger
-			.getLogger(ConvolutionMapper.class);
-
 	@Override
 	public void configure(JobConf conf) {
-		this.configuration = conf;
 		
 		try {
 			String kernelCacheName = new Path(HDFS_KERNEL).getName();

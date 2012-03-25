@@ -52,10 +52,10 @@
 				<attribute name="Class-Path" value="classpath"/>
 			</manifest>
 -->
-			<fileset dir=".">
+<!--			<fileset dir=".">
 				<include name="**/${lib.dir}/**" />
 			</fileset>
-				
+-->				
 		</jar>
 	</target>
 </project>
