@@ -34,7 +34,7 @@ public class RChannelDataPoint {
 
 		String[] values = csvRow.split(",");
 
-		if (values.length != 3) {
+		if (values.length != 2) {
 			return null;
 		}
 
