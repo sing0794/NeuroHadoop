@@ -1,5 +1,7 @@
 package convolution.rchannel;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.File;
 import java.util.ArrayList;
@@ -30,7 +32,7 @@ import org.apache.hadoop.util.ToolRunner;
  */
 
 public class ConvolutionJob extends Configured implements Tool {
-	static final String HDFS_KERNEL = "lookup/morlet-2000.dat";
+	static final String HDFS_KERNEL = "/neuro/lookup/morlet-2000.dat";
 
 	void cacheKernel(JobConf conf) throws IOException {
 		Path hdfsPath = new Path(HDFS_KERNEL);
@@ -71,6 +73,35 @@ public class ConvolutionJob extends Configured implements Tool {
 		}
 	}
 
+	public void CreateRats(JobConf conf) throws IOException {
+		BufferedWriter out = new BufferedWriter(new FileWriter("/neuro/hive/neurohive.q"));		
+				
+		out.write("DROP TABLE rats;");
+		out.newLine();
+		out.write("DROP TABLE ratsaverage;");
+		out.newLine();
+		out.newLine();
+		out.write("CREATE EXTERNAL TABLE rats(time INT, frequency INT, convolution INT)");
+		out.newLine();
+		out.write("PARTITIONED BY(rat STRING, dt STRING, channel STRING)");
+		out.newLine();
+		out.write("ROW FORMAT DELIMITED FIELDS TERMINATED BY ','");
+		out.newLine();
+		out.write("STORED AS SEQUENCEFILE LOCATION '/neuro/output';");
+		out.newLine();
+		out.newLine();
+		out.write("CREATE TABLE ratsaverage(time INT, frequency INT, convolution INT)");
+		out.newLine();
+		out.write("PARTITIONED BY(rat STRING, dt STRING, channel STRING)");
+		out.newLine();
+		out.write("LOCATION '/neuro/hive';");
+		out.newLine();
+		out.newLine();
+		out.flush();
+		out.close();
+
+	}
+
 	@Override
 	public int run(String[] args) throws Exception {
 
@@ -79,6 +110,7 @@ public class ConvolutionJob extends Configured implements Tool {
 		conf.setJobName("ConvolutionJob");
 		
 		this.cacheKernel(conf);
+		this.CreateRats(conf);
 		conf.setMapperClass(ConvolutionMapper.class);
 		List<String> other_args = new ArrayList<String>();
 		for(int i=0; i < args.length; ++i) {
@@ -98,7 +130,7 @@ public class ConvolutionJob extends Configured implements Tool {
 				return printUsage();
 			}
 		}
-		
+
 		// Make sure there are exactly 2 parameters left.
 		if (other_args.size() != 2) {
 			System.out.println("ERROR: Wrong number of parameters: " + other_args.size() + " instead of 2.");
@@ -131,6 +163,8 @@ public class ConvolutionJob extends Configured implements Tool {
 
 	public static void main(String[] args) throws Exception {
 		int res = ToolRunner.run(new Configuration(), new ConvolutionJob(), args);
+		Process p=Runtime.getRuntime().exec("hive -f /neuro/hive/neurohive.q"); 
+		p.waitFor();
 		System.exit(res);
 
 	}
