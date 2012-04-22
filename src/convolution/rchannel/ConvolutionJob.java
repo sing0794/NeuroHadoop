@@ -74,7 +74,7 @@ public class ConvolutionJob extends Configured implements Tool {
 	}
 
 	public void CreateRats(JobConf conf) throws IOException {
-		BufferedWriter out = new BufferedWriter(new FileWriter("/neuro/hive/neurohive.q"));		
+		BufferedWriter out = new BufferedWriter(new FileWriter("/neuro/script/hive/createrats.q"));		
 				
 		out.write("DROP TABLE rats;");
 		out.newLine();
@@ -87,14 +87,14 @@ public class ConvolutionJob extends Configured implements Tool {
 		out.newLine();
 		out.write("ROW FORMAT DELIMITED FIELDS TERMINATED BY ','");
 		out.newLine();
-		out.write("STORED AS SEQUENCEFILE LOCATION '/neuro/output';");
+		out.write("STORED AS SEQUENCEFILE LOCATION '/neuro/output/rats';");
 		out.newLine();
 		out.newLine();
 		out.write("CREATE TABLE ratsaverage(time INT, frequency INT, convolution INT)");
 		out.newLine();
 		out.write("PARTITIONED BY(rat STRING, dt STRING, channel STRING)");
 		out.newLine();
-		out.write("LOCATION '/neuro/hive';");
+		out.write("LOCATION '/neuro/output/ratsaverage';");
 		out.newLine();
 		out.newLine();
 		out.flush();
@@ -163,8 +163,6 @@ public class ConvolutionJob extends Configured implements Tool {
 
 	public static void main(String[] args) throws Exception {
 		int res = ToolRunner.run(new Configuration(), new ConvolutionJob(), args);
-		Process p=Runtime.getRuntime().exec("hive -f /neuro/hive/neurohive.q"); 
-		p.waitFor();
 		System.exit(res);
 
 	}

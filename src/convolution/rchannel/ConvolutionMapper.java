@@ -78,7 +78,8 @@ public class ConvolutionMapper extends MapReduceBase implements
 		String fpath = conf.get("map.input.file");
 		String fname = new File(fpath).getName();
 
-		BufferedWriter out = new BufferedWriter(new FileWriter("/neuro/hive/neurohive.q", true));		
+		BufferedWriter alterout = new BufferedWriter(new FileWriter("/neuro/script/hive/alterrats.q", true));		
+		BufferedWriter insertout = new BufferedWriter(new FileWriter("/neuro/script/hive/insertratsaverage.q", true));		
 		
 		String ratnumber;
 		String sessiondate;
@@ -101,55 +102,57 @@ public class ConvolutionMapper extends MapReduceBase implements
 		indexEnd = fname.indexOf('.', indexBegin);
 		channelid = fname.substring(indexBegin, indexEnd);
 		
-		out.append("ALTER TABLE rats ADD PARTITION(rat='" + ratnumber + "',dt='" + sessiondate + "',channel='" + channelid + "');");
-		out.newLine();
+		alterout.append("ALTER TABLE rats ADD PARTITION(rat='" + ratnumber + "',dt='" + sessiondate + "',channel='" + channelid + "');");
+		alterout.newLine();
 		if (channelid.contains("r")) {
-			out.newLine();			
-			out.append("ALTER TABLE ratsaverage ADD PARTITION(rat='" + ratnumber + "',dt='" + sessiondate + "',channel='" + channelid + "');");
-			out.newLine();			
-			out.newLine();			
-			out.append("INSERT OVERWRITE TABLE ratsaverage PARTITION (rat='" + ratnumber + "',dt='" + sessiondate + "',channel='" + channelid + "')");
-			out.newLine();			
-			out.append("SELECT time, frequency, convolution");
-			out.newLine();			
-			out.append("FROM rats");
-			out.newLine();			
-			out.append("WHERE rat='" + ratnumber + "'");
-			out.newLine();			
-			out.append("AND dt='" + sessiondate + "'");
-			out.newLine();			
-			out.append("AND channel='" + channelid + "'");
-			out.newLine();			
-			out.append(";");
-			out.newLine();			
-			out.newLine();			
+			alterout.newLine();			
+			alterout.append("ALTER TABLE ratsaverage ADD PARTITION(rat='" + ratnumber + "',dt='" + sessiondate + "',channel='" + channelid + "');");
+			alterout.newLine();			
+			alterout.newLine();			
+			insertout.append("INSERT OVERWRITE TABLE ratsaverage PARTITION (rat='" + ratnumber + "',dt='" + sessiondate + "',channel='" + channelid + "')");
+			insertout.newLine();			
+			insertout.append("SELECT time, frequency, convolution");
+			insertout.newLine();			
+			insertout.append("FROM rats");
+			insertout.newLine();			
+			insertout.append("WHERE rat='" + ratnumber + "'");
+			insertout.newLine();			
+			insertout.append("AND dt='" + sessiondate + "'");
+			insertout.newLine();			
+			insertout.append("AND channel='" + channelid + "'");
+			insertout.newLine();			
+			insertout.append(";");
+			insertout.newLine();			
+			insertout.newLine();			
 
 		} else if (channelid.contains("3")) {
-			out.newLine();
-			out.append("ALTER TABLE ratsaverage ADD PARTITION(rat='" + ratnumber + "',dt='" + sessiondate + "',channel='avg');");
-			out.newLine();
-			out.append("INSERT OVERWRITE TABLE ratsaverage PARTITION (rat='" + ratnumber + "',dt='" + sessiondate + "', channel='avg')");
-			out.newLine();			
-			out.append("SELECT time, frequency, AVG(convolution)");
-			out.newLine();			
-			out.append("FROM rats");
-			out.newLine();			
-			out.append("WHERE rat='" + ratnumber + "'");
-			out.newLine();			
-			out.append("AND dt='" + sessiondate + "'");
-			out.newLine();			
-			out.append("AND NOT(channel LIKE '%r%')");
-			out.newLine();			
-			out.append("GROUP BY time, frequency");
-			out.newLine();			
-			out.append(";");
-			out.newLine();	
-			out.newLine();	
+			alterout.newLine();
+			alterout.append("ALTER TABLE ratsaverage ADD PARTITION(rat='" + ratnumber + "',dt='" + sessiondate + "',channel='avg');");
+			alterout.newLine();
+			insertout.append("INSERT OVERWRITE TABLE ratsaverage PARTITION (rat='" + ratnumber + "',dt='" + sessiondate + "', channel='avg')");
+			insertout.newLine();			
+			insertout.append("SELECT time, frequency, AVG(convolution)");
+			insertout.newLine();			
+			insertout.append("FROM rats");
+			insertout.newLine();			
+			insertout.append("WHERE rat='" + ratnumber + "'");
+			insertout.newLine();			
+			insertout.append("AND dt='" + sessiondate + "'");
+			insertout.newLine();			
+			insertout.append("AND NOT(channel LIKE '%r%')");
+			insertout.newLine();			
+			insertout.append("GROUP BY time, frequency");
+			insertout.newLine();			
+			insertout.append(";");
+			insertout.newLine();	
+			insertout.newLine();	
 
 		}
 		
-		out.flush();
-		out.close();
+		alterout.flush();
+		alterout.close();
+		insertout.flush();
+		insertout.close();
 
 	}
 
